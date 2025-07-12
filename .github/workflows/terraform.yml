@@ -1,17 +1,28 @@
-name: Terraform VPC CIDR
+name: Terraform Apply/Destroy with CIDR Input
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Terraform Action to Perform"
+        required: true
+        default: "apply"
+        type: choice
+        options:
+          - apply
+          - destroy
+      cidr_block:
+        description: "CIDR Block for the VPC"
+        required: true
+        default: "10.0.0.0/16"
 
 jobs:
   terraform:
-    name: Provision VPC with CIDR
+    name: Run Terraform ${{ github.event.inputs.action }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
       - name: Setup Terraform
@@ -24,15 +35,14 @@ jobs:
         working-directory: terraform/
 
       - name: Terraform Plan
-        run: terraform plan -var="vpc_cidr=10.0.0.0/16"
+        run: terraform plan -var="vpc_cidr=${{ github.event.inputs.cidr_block }}"
         working-directory: terraform/
 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve -var="vpc_cidr=10.0.0.0/16"
+      - name: Terraform ${{ github.event.inputs.action | title }}
+        run: terraform ${{ github.event.inputs.action }} -auto-approve -var="vpc_cidr=${{ github.event.inputs.cidr_block }}"
         working-directory: terraform/
 
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ap-south-1
-
+      AWS_REGION: us-east-1
