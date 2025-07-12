@@ -1,4 +1,4 @@
-name: Terraform Apply/Destroy with CIDR Input
+name: Terraform Apply/Destroy with CIDR and Region Input
 
 on:
   workflow_dispatch:
@@ -15,6 +15,10 @@ on:
         description: "CIDR Block for the VPC"
         required: true
         default: "10.0.0.0/16"
+      region:
+        description: "AWS Region to deploy"
+        required: true
+        default: "us-east-1"
 
 jobs:
   terraform:
@@ -30,19 +34,22 @@ jobs:
         with:
           terraform_version: 1.5.7
 
+      - name: Set AWS Region in ENV
+        run: echo "AWS_REGION=${{ github.event.inputs.region }}" >> $GITHUB_ENV
+
       - name: Terraform Init
         run: terraform init
         working-directory: terraform/
 
       - name: Terraform Plan
-        run: terraform plan -var="vpc_cidr=${{ github.event.inputs.cidr_block }}"
+        run: terraform plan -var="vpc_cidr=${{ github.event.inputs.cidr_block }}" -var="aws_region=${{ github.event.inputs.region }}"
         working-directory: terraform/
 
-      - name: Terraform ${{ github.event.inputs.action | title }}
-        run: terraform ${{ github.event.inputs.action }} -auto-approve -var="vpc_cidr=${{ github.event.inputs.cidr_block }}"
+      - name: Terraform ${{ github.event.inputs.action }}
+        run: terraform ${{ github.event.inputs.action }} -auto-approve -var="vpc_cidr=${{ github.event.inputs.cidr_block }}" -var="aws_region=${{ github.event.inputs.region }}"
         working-directory: terraform/
 
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: us-east-1
+      AWS_REGION: ${{ github.event.inputs.region }}
