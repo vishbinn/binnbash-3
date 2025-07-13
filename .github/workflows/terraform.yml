@@ -18,7 +18,7 @@ on:
       region:
         description: "AWS Region to deploy"
         required: true
-        default: "us-east-1"
+        default: "ap-south-1"
 
 jobs:
   terraform:
